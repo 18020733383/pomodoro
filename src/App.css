@@ -1,0 +1,607 @@
+.app {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.title .h1 {
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: 0.2px;
+}
+
+.title .sub {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
+.status {
+  text-align: right;
+}
+
+.status .time {
+  font-size: 36px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.status .hint {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.panel {
+  background: rgba(17, 24, 39, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  backdrop-filter: blur(10px);
+}
+
+.h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.tableHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.tableHeader .h2 {
+  margin-bottom: 0;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.row.actions {
+  justify-content: flex-start;
+}
+
+.row.minor {
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.label {
+  width: 90px;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+}
+
+.control {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.24);
+  color: rgba(255, 255, 255, 0.92);
+  outline: none;
+}
+
+.control.small {
+  flex: 0 0 84px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.sep {
+  color: rgba(255, 255, 255, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+.control:disabled {
+  opacity: 0.55;
+}
+
+.btn {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn.smallBtn {
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.btn.primary {
+  background: rgba(59, 130, 246, 0.9);
+  border-color: rgba(59, 130, 246, 1);
+}
+
+.btn.danger {
+  background: rgba(239, 68, 68, 0.88);
+  border-color: rgba(239, 68, 68, 1);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+}
+
+.toggle input {
+  width: 16px;
+  height: 16px;
+}
+
+.link {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 6px 8px;
+}
+
+.link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tableWrap {
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+.table th,
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  font-size: 13px;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  background: rgba(17, 24, 39, 0.95);
+  z-index: 1;
+}
+
+.table tr.running td {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 18px 12px;
+}
+
+.note {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.86);
+  white-space: pre-wrap;
+}
+
+.note.error {
+  border-color: rgba(239, 68, 68, 0.6);
+  background: rgba(239, 68, 68, 0.1);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.note.alarmNote {
+  border-color: rgba(239, 68, 68, 0.6);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.alarmTitle {
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.alarmBody {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.alarmActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.bioPanel {
+  border-color: rgba(34, 197, 94, 0.28);
+  background: rgba(0, 0, 0, 0.36);
+}
+
+.bioActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.control.bioSelect {
+  flex: 0 0 190px;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  background: rgba(0, 0, 0, 0.45);
+  border-color: rgba(34, 197, 94, 0.22);
+  color: rgba(187, 247, 208, 0.95);
+}
+
+.bioWrap {
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.bioHeader {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(34, 197, 94, 0.16);
+  margin-bottom: 12px;
+}
+
+.bioTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(34, 197, 94, 0.95);
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.bioDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 1);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.65);
+}
+
+.bioBadge {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(34, 197, 94, 0.65);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.bioSub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(34, 197, 94, 0.45);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.bioGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bioStat {
+  border: 1px solid rgba(34, 197, 94, 0.16);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.bioStatLabel {
+  font-size: 11px;
+  color: rgba(34, 197, 94, 0.5);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.bioStatValue {
+  margin-top: 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: rgba(34, 197, 94, 0.95);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.bioStatNote {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(187, 247, 208, 0.65);
+}
+
+.bioChart {
+  margin-top: 12px;
+  border: 1px solid rgba(34, 197, 94, 0.16);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.bioChartTitle {
+  font-size: 11px;
+  color: rgba(34, 197, 94, 0.5);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.bioChartCanvas {
+  position: relative;
+}
+
+.bioSvg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.bioChartAnim .bioLine {
+  stroke: rgba(34, 197, 94, 0.92);
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: bio-draw 950ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+  filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.28));
+}
+
+.bioChartAnim .bioArea {
+  opacity: 0;
+  animation: bio-fade 520ms ease-out forwards;
+}
+
+.bioPoints .bioPoint {
+  fill: rgba(34, 197, 94, 0.65);
+  stroke: rgba(0, 0, 0, 0.6);
+  stroke-width: 1;
+  opacity: 0.8;
+}
+
+.bioPoints .bioPointOn {
+  fill: rgba(34, 197, 94, 1);
+  opacity: 1;
+  filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.55));
+}
+
+.bioHoverOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bioHoverLine {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  background: rgba(34, 197, 94, 0.24);
+  transform: translateX(-0.5px);
+  transition: left 70ms linear;
+}
+
+.bioHoverDot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: rgba(34, 197, 94, 1);
+  border: 1.2px solid rgba(0, 0, 0, 0.55);
+  filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.6));
+  transition: left 70ms linear, top 70ms linear;
+}
+
+.bioTooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.92);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 12px;
+  padding: 8px 10px;
+  min-width: 120px;
+  color: rgba(187, 247, 208, 0.95);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  pointer-events: none;
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.12);
+  transition: left 70ms linear, top 70ms linear;
+}
+
+.bioTooltipAbove {
+  transform: translate(-50%, calc(-100% - 10px));
+}
+
+.bioTooltipBelow {
+  transform: translate(-50%, 10px);
+}
+
+.bioTooltip::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.92);
+  border-right: 1px solid rgba(34, 197, 94, 0.25);
+  border-bottom: 1px solid rgba(34, 197, 94, 0.25);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.bioTooltipAbove::after {
+  bottom: -6px;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.bioTooltipBelow::after {
+  top: -6px;
+  transform: translateX(-50%) rotate(225deg);
+}
+
+.bioTooltipTitle {
+  font-size: 11px;
+  color: rgba(34, 197, 94, 0.75);
+  letter-spacing: 0.08em;
+}
+
+.bioTooltipValue {
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 800;
+  color: rgba(34, 197, 94, 0.95);
+}
+
+.bioTerminal {
+  margin-top: 12px;
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.bioTerminalBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(34, 197, 94, 0.16);
+}
+
+.bioLed {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  opacity: 0.7;
+}
+
+.bioLed.red {
+  background: rgba(239, 68, 68, 1);
+}
+
+.bioLed.yellow {
+  background: rgba(234, 179, 8, 1);
+}
+
+.bioLed.green {
+  background: rgba(34, 197, 94, 1);
+}
+
+.bioPath {
+  margin-left: 6px;
+  color: rgba(34, 197, 94, 0.55);
+  font-size: 12px;
+}
+
+.bioTerminalBody {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bioSummary {
+  color: rgba(187, 247, 208, 0.88);
+  font-size: 12px;
+}
+
+.bioTerminalSectionTitle {
+  color: rgba(34, 197, 94, 0.55);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.bioCode {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  background: rgba(8, 20, 12, 0.35);
+  color: rgba(34, 197, 94, 0.92);
+  overflow: auto;
+  max-height: 240px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.bioExplain {
+  color: rgba(187, 247, 208, 0.72);
+  font-size: 12px;
+  border-left: 2px solid rgba(34, 197, 94, 0.35);
+  padding-left: 10px;
+}
+
+.bioEmpty {
+  border: 1px dashed rgba(34, 197, 94, 0.2);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.bioMuted {
+  color: rgba(34, 197, 94, 0.75);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.bioMutedSmall {
+  margin-top: 6px;
+  color: rgba(187, 247, 208, 0.6);
+  font-size: 12px;
+}
+
+@media (min-width: 900px) {
+  .bioGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@keyframes bio-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes bio-fade {
+  to {
+    opacity: 1;
+  }
+}

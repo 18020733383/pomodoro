@@ -1,0 +1,10 @@
+name = "pomodoro-pwa"
+compatibility_date = "2026-02-08"
+
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pomodoro"
+database_id = "REPLACE_ME"
+migrations_dir = "migrations"

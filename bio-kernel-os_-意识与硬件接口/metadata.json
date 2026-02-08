@@ -1,0 +1,7 @@
+{
+  "name": "Bio-Kernel OS: 意识与硬件接口",
+  "description": "一个将人类行为和意识转化为虚拟‘生理硬件API’调用的前卫实验应用。模拟‘意识是软件，身体是硬件’的哲学构想。",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
