@@ -6,5 +6,5 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "pomodoro"
-database_id = "REPLACE_ME"
+database_id = "deabe05a-066b-4de3-b2cd-8005a26ae12d"
 migrations_dir = "migrations"
