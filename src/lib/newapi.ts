@@ -1,4 +1,4 @@
-import type { AiSettings, PomodoroRecord } from '../types'
+import type { AiSettings, DdlEvent, PomodoroRecord } from '../types'
 import { formatDateTime, formatDurationSec } from './time'
 
 type ChatMessage = {
@@ -61,10 +61,26 @@ export async function requestChatContent(args: {
   return JSON.stringify(data)
 }
 
-export function buildMentorPrompt(records: PomodoroRecord[]): ChatMessage[] {
+export function buildMentorPrompt(records: PomodoroRecord[], ddlEvents: DdlEvent[]): ChatMessage[] {
   const max = 60
   const rows = records.slice(0, max)
 
+  const ddlMax = 40
+  const ddlRows = ddlEvents
+    .slice(0, ddlMax)
+    .slice()
+    .sort((a, b) => (a.ddlAt ?? '').localeCompare(b.ddlAt ?? ''))
+
+  const ddlTableLines =
+    ddlRows.length === 0
+      ? ['（暂无）']
+      : [
+          '# | 标题 | DDL | 状态',
+          ...ddlRows.map((e, idx) => {
+            const status = e.status === 'not_started' ? '还没到' : e.status === 'ongoing' ? '进行中' : '已结束'
+            return `${idx + 1} | ${e.title} | ${formatDateTime(e.ddlAt)} | ${status}`
+          }),
+        ]
   const tableLines = [
     '# | 名称 | 定时器 | 开始日期与时间 | 停止日期与时间',
     ...rows.map((r, idx) => {
@@ -81,6 +97,9 @@ export function buildMentorPrompt(records: PomodoroRecord[]): ChatMessage[] {
     '2) 再给 5 条具体可执行建议，每条不超过 20 个字。',
     '3) 最后给一个 1 小时内可完成的行动清单（带时间）。',
     '',
+    '我的 DDL 事件如下（需要考虑它们对时间规划的压力与优先级）：',
+    ...ddlTableLines,
+    '',
     '我的番茄钟记录如下：',
     ...tableLines,
   ].join('\n')
@@ -91,6 +110,6 @@ export function buildMentorPrompt(records: PomodoroRecord[]): ChatMessage[] {
   ]
 }
 
-export async function requestMentorReview(args: { settings: AiSettings; records: PomodoroRecord[] }) {
-  return requestChatContent({ settings: args.settings, messages: buildMentorPrompt(args.records), temperature: 0.7 })
+export async function requestMentorReview(args: { settings: AiSettings; records: PomodoroRecord[]; ddlEvents: DdlEvent[] }) {
+  return requestChatContent({ settings: args.settings, messages: buildMentorPrompt(args.records, args.ddlEvents), temperature: 0.7 })
 }

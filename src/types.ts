@@ -3,6 +3,16 @@ export type PomodoroEvent = {
   createdAt: string
 }
 
+export type DdlStatus = 'not_started' | 'ongoing' | 'done'
+
+export type DdlEvent = {
+  id: string
+  title: string
+  ddlAt: string
+  status: DdlStatus
+  createdAt: string
+}
+
 export type PomodoroRecord = {
   id: string
   eventName: string

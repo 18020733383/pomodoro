@@ -8,7 +8,8 @@ import { useWakeLock } from './hooks/useWakeLock'
 import { clampInt, formatDateTime, formatDurationSec } from './lib/time'
 import { requestMentorReview } from './lib/newapi'
 import { newHardwareCallId, requestHardwareReport } from './lib/hardwareAi'
-import type { AppSettings, HardwareCall, PomodoroRecord } from './types'
+import { nowIso, uuid } from './lib/storage'
+import type { AppSettings, DdlEvent, DdlStatus, HardwareCall, PomodoroRecord } from './types'
 import { warmupAlarm } from './lib/alarm'
 
 function App() {
@@ -52,11 +53,33 @@ function App() {
   const [hwSelectedId, setHwSelectedId] = useState<string>('')
   const [hwLoading, setHwLoading] = useState(false)
   const [hwError, setHwError] = useState<string>('')
+  const [ddlEvents, setDdlEvents, ddlLoadingState] = useKvState<DdlEvent[]>('pomodoro:ddlEvents', [])
+  const [ddlTitleDraft, setDdlTitleDraft] = useState('')
+  const [ddlAtDraft, setDdlAtDraft] = useState('')
+  const [ddlStatusDraft, setDdlStatusDraft] = useState<DdlStatus>('not_started')
   const [dataOk, setDataOk] = useState<string>('')
   const [dataError, setDataError] = useState<string>('')
   const importInputRef = useRef<HTMLInputElement | null>(null)
 
-  const loading = pomodoroLoading || hwLoadingState
+  const loading = pomodoroLoading || hwLoadingState || ddlLoadingState
+
+  const toDatetimeLocal = (iso: string) => {
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return ''
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const yyyy = d.getFullYear()
+    const mm = pad(d.getMonth() + 1)
+    const dd = pad(d.getDate())
+    const hh = pad(d.getHours())
+    const mi = pad(d.getMinutes())
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`
+  }
+
+  const fromDatetimeLocal = (value: string) => {
+    const d = new Date(value)
+    if (Number.isNaN(d.getTime())) return ''
+    return d.toISOString()
+  }
 
   // 同步 settings 变化到本地 UI 状态
   useEffect(() => {
@@ -128,6 +151,7 @@ function App() {
       const content = await requestMentorReview({
         settings: { baseUrl: settings.ai?.baseUrl ?? 'https://x666.me', model: settings.ai?.model ?? 'gemini-3-flash-preview', apiKey: aiKeyDraft },
         records,
+        ddlEvents,
       })
       setAiReview(content)
     } catch (e) {
@@ -193,6 +217,7 @@ function App() {
           'pomodoro:active': active,
           'pomodoro:alarm': alarm,
           'pomodoro:hardwareCalls': hwCalls,
+          'pomodoro:ddlEvents': ddlEvents,
         },
       })
       setDataOk('已导出 JSON（本地）')
@@ -217,6 +242,7 @@ function App() {
     const nextActive = data['pomodoro:active']
     const nextAlarm = data['pomodoro:alarm']
     const nextHwCalls = data['pomodoro:hardwareCalls']
+    const nextDdlEvents = data['pomodoro:ddlEvents']
 
     if (nextSettings !== undefined) setSettings(nextSettings as typeof settings)
     if (nextEvents !== undefined) setEvents(normalizeEvents(Array.isArray(nextEvents) ? (nextEvents as typeof events) : []))
@@ -224,6 +250,7 @@ function App() {
     if (nextActive !== undefined) setActive((nextActive as typeof active) ?? null)
     if (nextAlarm !== undefined) setAlarm((nextAlarm as typeof alarm) ?? null)
     if (nextHwCalls !== undefined) setHwCalls(Array.isArray(nextHwCalls) ? (nextHwCalls as typeof hwCalls) : [])
+    if (nextDdlEvents !== undefined) setDdlEvents(Array.isArray(nextDdlEvents) ? (nextDdlEvents as typeof ddlEvents) : [])
 
     const res = await fetch('/api/snapshot', {
       method: 'PUT',
@@ -259,6 +286,23 @@ function App() {
     } catch (err) {
       setDataError(err instanceof Error ? err.message : String(err))
     }
+  }
+
+  const ddlRows = useMemo(() => {
+    const copy = [...ddlEvents]
+    copy.sort((a, b) => (a.ddlAt ?? '').localeCompare(b.ddlAt ?? ''))
+    return copy
+  }, [ddlEvents])
+
+  const onAddDdlEvent = () => {
+    const title = ddlTitleDraft.trim()
+    const ddlIso = fromDatetimeLocal(ddlAtDraft)
+    if (!title || !ddlIso) return
+    const item: DdlEvent = { id: uuid(), title, ddlAt: ddlIso, status: ddlStatusDraft, createdAt: nowIso() }
+    setDdlEvents((prev: DdlEvent[]) => [item, ...prev], true)
+    setDdlTitleDraft('')
+    setDdlAtDraft('')
+    setDdlStatusDraft('not_started')
   }
 
   if (loading) {
@@ -441,6 +485,90 @@ function App() {
 
       <section className="panel">
         <div className="tableHeader">
+          <div className="h2">事件 DDL</div>
+        </div>
+
+        <div className="row">
+          <label className="label">新增</label>
+          <input className="control" value={ddlTitleDraft} placeholder="比如：论文初稿 / 项目验收" onChange={(e) => setDdlTitleDraft(e.target.value)} />
+          <input className="control" type="datetime-local" value={ddlAtDraft} onChange={(e) => setDdlAtDraft(e.target.value)} />
+          <select className="control small" value={ddlStatusDraft} onChange={(e) => setDdlStatusDraft(e.target.value as DdlStatus)}>
+            <option value="not_started">还没到</option>
+            <option value="ongoing">进行中</option>
+            <option value="done">已结束</option>
+          </select>
+          <button className="btn" onClick={onAddDdlEvent} disabled={!ddlTitleDraft.trim() || !ddlAtDraft}>
+            添加
+          </button>
+        </div>
+
+        <div className="tableWrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>标题</th>
+                <th>DDL</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ddlRows.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="empty">
+                    还没有 DDL 事件。
+                  </td>
+                </tr>
+              ) : (
+                ddlRows.map((it) => (
+                  <tr key={it.id}>
+                    <td>{it.title}</td>
+                    <td>
+                      <input
+                        className="control"
+                        type="datetime-local"
+                        value={toDatetimeLocal(it.ddlAt)}
+                        onChange={(e) => {
+                          const nextIso = fromDatetimeLocal(e.target.value)
+                          if (!nextIso) return
+                          setDdlEvents((prev: DdlEvent[]) => prev.map((x) => (x.id === it.id ? { ...x, ddlAt: nextIso } : x)), true)
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <select
+                        className="control small"
+                        value={it.status}
+                        onChange={(e) => {
+                          const next = e.target.value as DdlStatus
+                          setDdlEvents((prev: DdlEvent[]) => prev.map((x) => (x.id === it.id ? { ...x, status: next } : x)), true)
+                        }}
+                      >
+                        <option value="not_started">还没到</option>
+                        <option value="ongoing">进行中</option>
+                        <option value="done">已结束</option>
+                      </select>
+                    </td>
+                    <td>
+                      <button className="btn smallBtn" onClick={() => setDdlEvents((prev: DdlEvent[]) => prev.filter((x) => x.id !== it.id), true)}>
+                        删除
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="note">
+          当前：{ddlRows.filter((x) => x.status === 'ongoing').length} 进行中 / {ddlRows.filter((x) => x.status === 'not_started').length} 未到 /{' '}
+          {ddlRows.filter((x) => x.status === 'done').length} 已结束
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="tableHeader">
           <div className="h2">记录</div>
           <button className="btn" disabled={Boolean(active)} onClick={clearRecords}>
             清空记录
@@ -484,23 +612,6 @@ function App() {
             </tbody>
           </table>
         </div>
-      </section>
-
-      <section className="panel">
-        <div className="h2">数据</div>
-        <div className="row actions">
-          <button className="btn" onClick={onExportJson}>
-            导出 JSON
-          </button>
-          <button className="btn" disabled={Boolean(active) || Boolean(alarm)} onClick={onPickImportFile}>
-            导入 JSON
-          </button>
-          <button className="btn danger" disabled={Boolean(active) || Boolean(alarm)} onClick={onClearAllData}>
-            清空所有数据
-          </button>
-          <input ref={importInputRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={onImportChange} />
-        </div>
-        {dataError ? <div className="note error">{dataError}</div> : dataOk ? <div className="note">{dataOk}</div> : <div className="note">导入或清空会影响云端数据。</div>}
       </section>
 
       <section className="panel">
@@ -570,6 +681,23 @@ function App() {
 
         {hwError ? <div className="note error">{hwError}</div> : null}
         <BioKernelPanel call={selectedHwCall} />
+      </section>
+
+      <section className="panel">
+        <div className="h2">数据</div>
+        <div className="row actions">
+          <button className="btn" onClick={onExportJson}>
+            导出 JSON
+          </button>
+          <button className="btn" disabled={Boolean(active) || Boolean(alarm)} onClick={onPickImportFile}>
+            导入 JSON
+          </button>
+          <button className="btn danger" disabled={Boolean(active) || Boolean(alarm)} onClick={onClearAllData}>
+            清空所有数据
+          </button>
+          <input ref={importInputRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={onImportChange} />
+        </div>
+        {dataError ? <div className="note error">{dataError}</div> : dataOk ? <div className="note">{dataOk}</div> : <div className="note">导入或清空会影响云端数据。</div>}
       </section>
     </div>
   )
