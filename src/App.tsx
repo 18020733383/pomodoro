@@ -3,12 +3,12 @@ import type { ChangeEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BioKernelPanel } from './components/BioKernelPanel'
 import { normalizeEvents, usePomodoro } from './hooks/usePomodoro'
-import { getClientId, setClientId, useKvState } from './hooks/useKvState'
+import { getClientId, useKvState } from './hooks/useKvState'
 import { useWakeLock } from './hooks/useWakeLock'
 import { clampInt, formatDateTime, formatDurationSec } from './lib/time'
 import { requestMentorReview } from './lib/newapi'
 import { newHardwareCallId, requestHardwareReport } from './lib/hardwareAi'
-import type { HardwareCall, PomodoroRecord } from './types'
+import type { AppSettings, HardwareCall, PomodoroRecord } from './types'
 import { warmupAlarm } from './lib/alarm'
 
 function App() {
@@ -45,7 +45,6 @@ function App() {
   const [durationM, setDurationM] = useState(25)
   const [durationS, setDurationS] = useState(0)
   const [aiKeyDraft, setAiKeyDraft] = useState('')
-  const [clientIdDraft, setClientIdDraft] = useState(() => getClientId())
   const [aiReview, setAiReview] = useState<string>('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string>('')
@@ -90,7 +89,7 @@ function App() {
 
   const onStart = async () => {
     const name = (eventName || '未命名').trim()
-    setSettings((prev) => ({ ...prev, defaultDurationSec: durationSec }), true)
+    setSettings((prev: AppSettings) => ({ ...prev, defaultDurationSec: durationSec }), true)
     await warmupAlarm()
     await start(name, durationSec)
   }
@@ -112,7 +111,7 @@ function App() {
   }, [hwCalls, hwSelectedId])
 
   const onSaveAiKey = () => {
-    setSettings((prev) => ({
+    setSettings((prev: AppSettings) => ({
       ...prev,
       ai: {
         ...(prev.ai ?? { baseUrl: 'https://x666.me', model: 'gemini-3-flash-preview' }),
@@ -152,7 +151,7 @@ function App() {
         sourceRecordsCount: records.length,
         report,
       }
-      setHwCalls((prev) => [call, ...prev].slice(0, 20), true)
+      setHwCalls((prev: HardwareCall[]) => [call, ...prev].slice(0, 20), true)
       setHwSelectedId(call.id)
     } catch (e) {
       setHwError(e instanceof Error ? e.message : String(e))
@@ -382,7 +381,7 @@ function App() {
             <input
               type="checkbox"
               checked={settings.enableBeep}
-              onChange={(e) => setSettings((prev) => ({ ...prev, enableBeep: e.target.checked }))}
+              onChange={(e) => setSettings((prev: AppSettings) => ({ ...prev, enableBeep: e.target.checked }), true)}
             />
             <span>哔哔声</span>
           </label>
@@ -390,7 +389,7 @@ function App() {
             <input
               type="checkbox"
               checked={settings.enableBuzzerMp3}
-              onChange={(e) => setSettings((prev) => ({ ...prev, enableBuzzerMp3: e.target.checked }))}
+              onChange={(e) => setSettings((prev: AppSettings) => ({ ...prev, enableBuzzerMp3: e.target.checked }), true)}
             />
             <span>猛铃声(buzzer.mp3)</span>
           </label>
@@ -398,7 +397,7 @@ function App() {
             <input
               type="checkbox"
               checked={settings.enableSpeech}
-              onChange={(e) => setSettings((prev) => ({ ...prev, enableSpeech: e.target.checked }))}
+              onChange={(e) => setSettings((prev: AppSettings) => ({ ...prev, enableSpeech: e.target.checked }), true)}
             />
             <span>语音毒舌</span>
           </label>
@@ -513,10 +512,10 @@ function App() {
             className="control"
             value={settings.ai?.baseUrl ?? ''}
             onChange={(e) =>
-              setSettings((prev) => ({
+              setSettings((prev: AppSettings) => ({
                 ...prev,
                 ai: { ...(prev.ai ?? { baseUrl: 'https://x666.me', model: 'gemini-3-flash-preview' }), baseUrl: e.target.value },
-              }))
+              }), true)
             }
           />
         </div>
@@ -526,10 +525,10 @@ function App() {
             className="control"
             value={settings.ai?.model ?? ''}
             onChange={(e) =>
-              setSettings((prev) => ({
+              setSettings((prev: AppSettings) => ({
                 ...prev,
                 ai: { ...(prev.ai ?? { baseUrl: 'https://x666.me', model: 'gemini-3-flash-preview' }), model: e.target.value },
-              }))
+              }), true)
             }
           />
         </div>

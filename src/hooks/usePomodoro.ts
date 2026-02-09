@@ -52,7 +52,7 @@ export function usePomodoro() {
   const alarmLoopRef = useRef<ReturnType<typeof startAlarmLoop> | null>(null)
 
   useEffect(() => {
-    setSettings((prev) => ({
+    setSettings((prev: AppSettings) => ({
       ...defaultSettings,
       ...prev,
       ai: { ...defaultSettings.ai, ...prev.ai },
@@ -99,11 +99,11 @@ export function usePomodoro() {
   const addEvent = useCallback((name: string) => {
     const trimmed = name.trim()
     if (!trimmed) return
-    setEvents((prev) => normalizeEvents([...prev, { name: trimmed, createdAt: nowIso() }]), true)
+    setEvents((prev: PomodoroEvent[]) => normalizeEvents([...prev, { name: trimmed, createdAt: nowIso() }]), true)
   }, [setEvents])
 
   const removeEvent = useCallback((name: string) => {
-    setEvents((prev) => prev.filter((e) => e.name !== name), true)
+    setEvents((prev: PomodoroEvent[]) => prev.filter((e: PomodoroEvent) => e.name !== name), true)
   }, [setEvents])
 
   const start = useCallback(async (eventName: string, durationSec: number) => {
@@ -122,7 +122,7 @@ export function usePomodoro() {
       endedBy: 'finished',
     }
 
-    setRecords((prev) => [record, ...prev], true)
+    setRecords((prev: PomodoroRecord[]) => [record, ...prev], true)
     setActive({
       recordId,
       eventName,
@@ -137,8 +137,8 @@ export function usePomodoro() {
     const stoppedAt = nowIso()
     const recordId = active.recordId
 
-    setRecords((prev) =>
-      prev.map((r) =>
+    setRecords((prev: PomodoroRecord[]) =>
+      prev.map((r: PomodoroRecord) =>
         r.id === recordId && !r.stoppedAt
           ? {
               ...r,
@@ -161,8 +161,8 @@ export function usePomodoro() {
     const stoppedAt = finishedAtIso ?? nowIso()
     const eventName = active.eventName
 
-    setRecords((prev) =>
-      prev.map((r) => (r.id === recordId && !r.stoppedAt ? { ...r, stoppedAt, endedBy: 'finished' } : r)),
+    setRecords((prev: PomodoroRecord[]) =>
+      prev.map((r: PomodoroRecord) => (r.id === recordId && !r.stoppedAt ? { ...r, stoppedAt, endedBy: 'finished' } : r)),
       true
     )
     setActive(null, true)
@@ -192,7 +192,7 @@ export function usePomodoro() {
   const deleteRecord = useCallback(
     (id: string) => {
       if (active?.recordId === id) return
-      setRecords((prev) => prev.filter((r) => r.id !== id), true)
+      setRecords((prev: PomodoroRecord[]) => prev.filter((r: PomodoroRecord) => r.id !== id), true)
       if (alarm?.recordId === id) acknowledgeAlarm()
     },
     [acknowledgeAlarm, active?.recordId, alarm?.recordId, setRecords],
@@ -229,7 +229,7 @@ export function usePomodoro() {
   }, [active])
 
   useEffect(() => {
-    setEvents((prev) => normalizeEvents(prev))
+    setEvents((prev: PomodoroEvent[]) => normalizeEvents(prev), true)
   }, [setEvents])
 
   return {

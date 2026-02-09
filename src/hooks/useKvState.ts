@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { uuid } from '../lib/storage'
 
 const CLIENT_ID_KEY = 'pomodoro:clientId'
