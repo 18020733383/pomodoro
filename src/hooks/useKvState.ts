@@ -43,7 +43,43 @@ export function useKvState<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(initialValue)
   const [loading, setLoading] = useState(true)
   const lastSentRef = useRef<string>('')
-  const isFirstMountRef = useRef(true)
+  const timeoutRef = useRef<number | null>(null)
+  const valueRef = useRef<T>(value)
+
+  // 更新 ref 以便在异步闭包中使用最新值
+  useEffect(() => {
+    valueRef.current = value
+  }, [value])
+
+  // 使用 useCallback 避免在 useEffect 中引起不必要的重新执行
+  const syncToCloud = useCallback(async (v: T) => {
+    const serialized = JSON.stringify(v)
+    if (serialized === lastSentRef.current) return
+    try {
+      await kvPut(key, v)
+      lastSentRef.current = serialized
+    } catch (err) {
+      console.error(`Failed to save ${key}:`, err)
+    }
+  }, [key])
+
+  // 暴露一个可以立即同步的方法
+  const setValueWrapped = useCallback((newValue: T | ((prev: T) => T), immediate = false) => {
+    const nextValue = typeof newValue === 'function' 
+      ? (newValue as (prev: T) => T)(valueRef.current)
+      : newValue
+    
+    setValue(nextValue)
+
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+
+    if (immediate) {
+      void syncToCloud(nextValue)
+    }
+  }, [syncToCloud])
 
   // 仅在挂载时从云端同步一次
   useEffect(() => {
@@ -56,8 +92,8 @@ export function useKvState<T>(key: string, initialValue: T) {
           const v = remote.value as T
           lastSentRef.current = JSON.stringify(v)
           setValue(v)
+          valueRef.current = v
         } else {
-          // 如果云端没数据，初始化一个
           await kvPut(key, initialValue)
           lastSentRef.current = JSON.stringify(initialValue)
         }
@@ -70,29 +106,45 @@ export function useKvState<T>(key: string, initialValue: T) {
     return () => {
       cancelled = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
-  // 监听值变化并同步到云端
+  // 监听值变化并同步到云端（带防抖）
   useEffect(() => {
-    // 如果正在加载，不保存（防止初始值覆盖云端）
     if (loading) return
     
     const serialized = JSON.stringify(value)
-    // 如果值没变，不发送
     if (serialized === lastSentRef.current) return
 
-    const t = window.setTimeout(() => {
-      void (async () => {
-        try {
-          await kvPut(key, value)
-          lastSentRef.current = serialized
-        } catch (err) {
-          console.error(`Failed to save ${key}:`, err)
-        }
-      })()
-    }, 500) // 增加防抖时间到 500ms
-    return () => window.clearTimeout(t)
-  }, [key, value, loading])
+    timeoutRef.current = window.setTimeout(() => {
+      void syncToCloud(value)
+    }, 500)
 
-  return [value, setValue, loading] as const
+    return () => {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [key, value, loading, syncToCloud])
+
+  // 页面关闭前的兜底
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const serialized = JSON.stringify(valueRef.current)
+      if (serialized !== lastSentRef.current) {
+        // 使用 fetch keepalive 确保在页面关闭时也能发送请求
+        const id = ensureClientId()
+        void fetch('/api/kv', {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json', 'x-client-id': id },
+          body: JSON.stringify({ key, value: valueRef.current }),
+          keepalive: true,
+        })
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [key])
+
+  return [value, setValueWrapped, loading] as const
 }

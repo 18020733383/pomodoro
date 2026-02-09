@@ -99,11 +99,11 @@ export function usePomodoro() {
   const addEvent = useCallback((name: string) => {
     const trimmed = name.trim()
     if (!trimmed) return
-    setEvents((prev) => normalizeEvents([...prev, { name: trimmed, createdAt: nowIso() }]))
+    setEvents((prev) => normalizeEvents([...prev, { name: trimmed, createdAt: nowIso() }]), true)
   }, [setEvents])
 
   const removeEvent = useCallback((name: string) => {
-    setEvents((prev) => prev.filter((e) => e.name !== name))
+    setEvents((prev) => prev.filter((e) => e.name !== name), true)
   }, [setEvents])
 
   const start = useCallback(async (eventName: string, durationSec: number) => {
@@ -122,14 +122,14 @@ export function usePomodoro() {
       endedBy: 'finished',
     }
 
-    setRecords((prev) => [record, ...prev])
+    setRecords((prev) => [record, ...prev], true)
     setActive({
       recordId,
       eventName,
       durationSec,
       startedAt,
       endsAt,
-    })
+    }, true)
   }, [active, alarm, setActive, setRecords])
 
   const stop = useCallback(() => {
@@ -147,8 +147,9 @@ export function usePomodoro() {
             }
           : r,
       ),
+      true
     )
-    setActive(null)
+    setActive(null, true)
   }, [active, setActive, setRecords])
 
   const finish = useCallback(async (finishedAtIso?: string) => {
@@ -162,8 +163,9 @@ export function usePomodoro() {
 
     setRecords((prev) =>
       prev.map((r) => (r.id === recordId && !r.stoppedAt ? { ...r, stoppedAt, endedBy: 'finished' } : r)),
+      true
     )
-    setActive(null)
+    setActive(null, true)
 
     const body = pickToxicLine(eventName)
     setAlarm({
@@ -171,14 +173,14 @@ export function usePomodoro() {
       eventName,
       body,
       triggeredAt: nowIso(),
-    })
+    }, true)
   }, [active, setActive, setAlarm, setRecords])
 
   const acknowledgeAlarm = useCallback(() => {
     const current = alarmLoopRef.current
     alarmLoopRef.current = null
     if (current) current.stop()
-    setAlarm(null)
+    setAlarm(null, true)
   }, [setAlarm])
 
   const replayAlarm = useCallback(async () => {
@@ -190,7 +192,7 @@ export function usePomodoro() {
   const deleteRecord = useCallback(
     (id: string) => {
       if (active?.recordId === id) return
-      setRecords((prev) => prev.filter((r) => r.id !== id))
+      setRecords((prev) => prev.filter((r) => r.id !== id), true)
       if (alarm?.recordId === id) acknowledgeAlarm()
     },
     [acknowledgeAlarm, active?.recordId, alarm?.recordId, setRecords],
@@ -198,7 +200,7 @@ export function usePomodoro() {
 
   const clearRecords = useCallback(() => {
     if (active) return
-    setRecords([])
+    setRecords([], true)
     if (alarm) acknowledgeAlarm()
   }, [acknowledgeAlarm, active, alarm, setRecords])
 

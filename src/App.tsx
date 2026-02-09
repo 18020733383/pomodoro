@@ -73,7 +73,7 @@ function App() {
     if (!events.some((e) => e.name === eventName)) {
       setEventName(events[0]?.name ?? '摸鱼')
     }
-  }, [eventName, events])
+  }, [eventName, events, pomodoroLoading])
 
 
 
@@ -90,7 +90,7 @@ function App() {
 
   const onStart = async () => {
     const name = (eventName || '未命名').trim()
-    setSettings((prev) => ({ ...prev, defaultDurationSec: durationSec }))
+    setSettings((prev) => ({ ...prev, defaultDurationSec: durationSec }), true)
     await warmupAlarm()
     await start(name, durationSec)
   }
@@ -118,7 +118,7 @@ function App() {
         ...(prev.ai ?? { baseUrl: 'https://x666.me', model: 'gemini-3-flash-preview' }),
         apiKey: aiKeyDraft.trim() || undefined,
       },
-    }))
+    }), true)
   }
 
   const onMentorReview = async () => {
@@ -152,7 +152,7 @@ function App() {
         sourceRecordsCount: records.length,
         report,
       }
-      setHwCalls((prev) => [call, ...prev].slice(0, 20))
+      setHwCalls((prev) => [call, ...prev].slice(0, 20), true)
       setHwSelectedId(call.id)
     } catch (e) {
       setHwError(e instanceof Error ? e.message : String(e))
