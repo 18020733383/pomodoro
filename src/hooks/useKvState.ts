@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { loadJson, saveJson, uuid } from '../lib/storage'
+import { uuid } from '../lib/storage'
 
 const CLIENT_ID_KEY = 'pomodoro:clientId'
 
@@ -40,28 +40,31 @@ async function kvPut(key: string, value: unknown): Promise<void> {
 }
 
 export function useKvState<T>(key: string, initialValue: T) {
-  const [value, setValue] = useState<T>(() => loadJson<T>(key, initialValue))
+  const [value, setValue] = useState<T>(initialValue)
+  const [loading, setLoading] = useState(true)
   const lastSentRef = useRef<string>('')
-  const hydrationDoneRef = useRef(false)
+  const isFirstMountRef = useRef(true)
 
+  // 仅在挂载时从云端同步一次
   useEffect(() => {
     let cancelled = false
     void (async () => {
       try {
         const remote = await kvGet(key)
         if (cancelled) return
-        hydrationDoneRef.current = true
-        if (!remote.found) {
-          // 如果云端没数据，把本地当前数据同步上去
-          void kvPut(key, value).catch(() => {})
-          return
+        if (remote.found) {
+          const v = remote.value as T
+          lastSentRef.current = JSON.stringify(v)
+          setValue(v)
+        } else {
+          // 如果云端没数据，初始化一个
+          await kvPut(key, initialValue)
+          lastSentRef.current = JSON.stringify(initialValue)
         }
-        const v = remote.value as T
-        lastSentRef.current = JSON.stringify(v)
-        saveJson(key, v)
-        setValue(v)
-      } catch {
-        hydrationDoneRef.current = true
+      } catch (err) {
+        console.error(`Failed to fetch ${key}:`, err)
+      } finally {
+        if (!cancelled) setLoading(false)
       }
     })()
     return () => {
@@ -69,9 +72,13 @@ export function useKvState<T>(key: string, initialValue: T) {
     }
   }, [key])
 
+  // 监听值变化并同步到云端
   useEffect(() => {
-    saveJson(key, value)
+    // 如果正在加载，不保存（防止初始值覆盖云端）
+    if (loading) return
+    
     const serialized = JSON.stringify(value)
+    // 如果值没变，不发送
     if (serialized === lastSentRef.current) return
 
     const t = window.setTimeout(() => {
@@ -79,13 +86,13 @@ export function useKvState<T>(key: string, initialValue: T) {
         try {
           await kvPut(key, value)
           lastSentRef.current = serialized
-        } catch {
-          if (!hydrationDoneRef.current) return
+        } catch (err) {
+          console.error(`Failed to save ${key}:`, err)
         }
       })()
-    }, 250)
+    }, 500) // 增加防抖时间到 500ms
     return () => window.clearTimeout(t)
-  }, [key, value])
+  }, [key, value, loading])
 
-  return [value, setValue] as const
+  return [value, setValue, loading] as const
 }

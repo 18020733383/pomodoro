@@ -34,21 +34,22 @@ function App() {
     replayAlarm,
     deleteRecord,
     clearRecords,
+    loading: pomodoroLoading,
   } = usePomodoro()
 
   useWakeLock(Boolean(active))
 
-  const [eventName, setEventName] = useState(() => events[0]?.name ?? '摸鱼')
+  const [eventName, setEventName] = useState('摸鱼')
   const [eventDraft, setEventDraft] = useState('')
-  const [durationH, setDurationH] = useState(() => Math.floor(settings.defaultDurationSec / 3600))
-  const [durationM, setDurationM] = useState(() => Math.floor((settings.defaultDurationSec % 3600) / 60))
-  const [durationS, setDurationS] = useState(() => settings.defaultDurationSec % 60)
-  const [aiKeyDraft, setAiKeyDraft] = useState(() => settings.ai?.apiKey ?? '')
+  const [durationH, setDurationH] = useState(0)
+  const [durationM, setDurationM] = useState(25)
+  const [durationS, setDurationS] = useState(0)
+  const [aiKeyDraft, setAiKeyDraft] = useState('')
   const [clientIdDraft, setClientIdDraft] = useState(() => getClientId())
   const [aiReview, setAiReview] = useState<string>('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string>('')
-  const [hwCalls, setHwCalls] = useKvState<HardwareCall[]>('pomodoro:hardwareCalls', [])
+  const [hwCalls, setHwCalls, hwLoadingState] = useKvState<HardwareCall[]>('pomodoro:hardwareCalls', [])
   const [hwSelectedId, setHwSelectedId] = useState<string>('')
   const [hwLoading, setHwLoading] = useState(false)
   const [hwError, setHwError] = useState<string>('')
@@ -56,15 +57,25 @@ function App() {
   const [dataError, setDataError] = useState<string>('')
   const importInputRef = useRef<HTMLInputElement | null>(null)
 
+  const loading = pomodoroLoading || hwLoadingState
+
+  // 同步 settings 变化到本地 UI 状态
   useEffect(() => {
+    if (pomodoroLoading) return
+    setDurationH(Math.floor(settings.defaultDurationSec / 3600))
+    setDurationM(Math.floor((settings.defaultDurationSec % 3600) / 60))
+    setDurationS(settings.defaultDurationSec % 60)
+    setAiKeyDraft(settings.ai?.apiKey ?? '')
+  }, [settings, pomodoroLoading])
+
+  useEffect(() => {
+    if (pomodoroLoading) return
     if (!events.some((e) => e.name === eventName)) {
       setEventName(events[0]?.name ?? '摸鱼')
     }
   }, [eventName, events])
 
-  useEffect(() => {
-    setAiKeyDraft(settings.ai?.apiKey ?? '')
-  }, [settings.ai?.apiKey])
+
 
   const durationSec = useMemo(() => {
     const h = clampInt(durationH, 0, 24)
@@ -236,6 +247,14 @@ function App() {
     } catch (err) {
       setDataError(err instanceof Error ? err.message : String(err))
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="app loadingContainer">
+        <div className="loadingText">同步数据中...</div>
+      </div>
+    )
   }
 
   return (

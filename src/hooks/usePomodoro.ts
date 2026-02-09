@@ -39,11 +39,13 @@ function normalizeEvents(raw: PomodoroEvent[]): PomodoroEvent[] {
 export { normalizeEvents }
 
 export function usePomodoro() {
-  const [settings, setSettings] = useKvState<AppSettings>(STORAGE.settings, defaultSettings)
-  const [events, setEvents] = useKvState<PomodoroEvent[]>(STORAGE.events, defaultEvents)
-  const [records, setRecords] = useKvState<PomodoroRecord[]>(STORAGE.records, [])
-  const [active, setActive] = useKvState<ActiveSession | null>(STORAGE.active, null)
-  const [alarm, setAlarm] = useKvState<AlarmState | null>(STORAGE.alarm, null)
+  const [settings, setSettings, settingsLoading] = useKvState<AppSettings>(STORAGE.settings, defaultSettings)
+  const [events, setEvents, eventsLoading] = useKvState<PomodoroEvent[]>(STORAGE.events, defaultEvents)
+  const [records, setRecords, recordsLoading] = useKvState<PomodoroRecord[]>(STORAGE.records, [])
+  const [active, setActive, activeLoading] = useKvState<ActiveSession | null>(STORAGE.active, null)
+  const [alarm, setAlarm, alarmLoading] = useKvState<AlarmState | null>(STORAGE.alarm, null)
+
+  const loading = settingsLoading || eventsLoading || recordsLoading || activeLoading || alarmLoading
 
   const [nowMs, setNowMs] = useState(() => Date.now())
   const finishingRef = useRef(false)
@@ -250,5 +252,6 @@ export function usePomodoro() {
     replayAlarm,
     deleteRecord,
     clearRecords,
+    loading,
   }
 }

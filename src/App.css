@@ -7,6 +7,24 @@
   gap: 16px;
 }
 
+.loadingContainer {
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.loadingText {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
 .header {
   display: flex;
   align-items: flex-end;
