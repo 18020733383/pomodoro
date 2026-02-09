@@ -59,5 +59,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return json({ ok: true, updatedAt: now, count: stmts.length })
   }
 
+  if (request.method === 'DELETE') {
+    await env.DB.prepare('DELETE FROM kv WHERE client_id = ?1').bind(clientId).run()
+    return json({ ok: true })
+  }
+
   return json({ error: 'method_not_allowed' }, { status: 405 })
 }
