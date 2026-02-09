@@ -11,8 +11,7 @@ function json(value: unknown, init?: ResponseInit): WorkersResponse {
 }
 
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
-  const clientId = request.headers.get('x-client-id')?.trim()
-  if (!clientId) return json({ error: 'missing_client_id' }, { status: 400 })
+  const clientId = 'default'
 
   const url = new URL(request.url)
 

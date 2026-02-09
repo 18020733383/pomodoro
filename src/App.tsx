@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BioKernelPanel } from './components/BioKernelPanel'
 import { normalizeEvents, usePomodoro } from './hooks/usePomodoro'
-import { getClientId, useKvState } from './hooks/useKvState'
+import { useKvState } from './hooks/useKvState'
 import { useWakeLock } from './hooks/useWakeLock'
 import { clampInt, formatDateTime, formatDurationSec } from './lib/time'
 import { requestMentorReview } from './lib/newapi'
@@ -177,7 +177,7 @@ function App() {
     const pad = (n: number) => String(n).padStart(2, '0')
     const filename = `pomodoro-export-${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.json`
     try {
-      const res = await fetch('/api/snapshot', { method: 'GET', headers: { 'x-client-id': getClientId() } })
+      const res = await fetch('/api/snapshot', { method: 'GET' })
       if (!res.ok) throw new Error(`snapshot_get_failed_${res.status}`)
       const body = (await res.json()) as unknown
       downloadJson(filename, body)
@@ -227,7 +227,7 @@ function App() {
 
     const res = await fetch('/api/snapshot', {
       method: 'PUT',
-      headers: { 'content-type': 'application/json', 'x-client-id': getClientId() },
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), data }),
     })
     if (!res.ok) throw new Error(`snapshot_put_failed_${res.status}`)
@@ -253,7 +253,6 @@ function App() {
     try {
       const res = await fetch('/api/snapshot', {
         method: 'DELETE',
-        headers: { 'x-client-id': getClientId() },
       })
       if (!res.ok) throw new Error(`delete_failed_${res.status}`)
       window.location.reload()

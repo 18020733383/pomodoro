@@ -24,8 +24,7 @@ function normalizeSnapshot(input: unknown): Snapshot {
 }
 
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
-  const clientId = request.headers.get('x-client-id')?.trim()
-  if (!clientId) return json({ error: 'missing_client_id' }, { status: 400 })
+  const clientId = 'default'
 
   if (request.method === 'GET') {
     const rows = await env.DB.prepare('SELECT k, v, updated_at FROM kv WHERE client_id = ?1 ORDER BY k')

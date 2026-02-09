@@ -1,39 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { uuid } from '../lib/storage'
-
-const CLIENT_ID_KEY = 'pomodoro:clientId'
-
-export function getClientId(): string {
-  return localStorage.getItem(CLIENT_ID_KEY) || ''
-}
-
-export function setClientId(id: string) {
-  localStorage.setItem(CLIENT_ID_KEY, id.trim())
-}
-
-export function ensureClientId(): string {
-  const existing = getClientId()
-  if (existing) return existing
-  const id = uuid()
-  setClientId(id)
-  return id
-}
 
 async function kvGet(key: string): Promise<{ found: true; value: unknown } | { found: false }> {
-  const id = ensureClientId()
   const res = await fetch(`/api/kv?key=${encodeURIComponent(key)}`, {
     method: 'GET',
-    headers: { 'x-client-id': id },
   })
   if (!res.ok) throw new Error(`kv_get_failed_${res.status}`)
   return (await res.json()) as { found: true; value: unknown } | { found: false }
 }
 
 async function kvPut(key: string, value: unknown): Promise<void> {
-  const id = ensureClientId()
   const res = await fetch('/api/kv', {
     method: 'PUT',
-    headers: { 'content-type': 'application/json', 'x-client-id': id },
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ key, value }),
   })
   if (!res.ok) throw new Error(`kv_put_failed_${res.status}`)
@@ -46,12 +24,10 @@ export function useKvState<T>(key: string, initialValue: T) {
   const timeoutRef = useRef<number | null>(null)
   const valueRef = useRef<T>(value)
 
-  // 更新 ref 以便在异步闭包中使用最新值
   useEffect(() => {
     valueRef.current = value
   }, [value])
 
-  // 使用 useCallback 避免在 useEffect 中引起不必要的重新执行
   const syncToCloud = useCallback(async (v: T) => {
     const serialized = JSON.stringify(v)
     if (serialized === lastSentRef.current) return
@@ -63,7 +39,6 @@ export function useKvState<T>(key: string, initialValue: T) {
     }
   }, [key])
 
-  // 暴露一个可以立即同步的方法
   const setValueWrapped = useCallback((newValue: T | ((prev: T) => T), immediate = false) => {
     const nextValue = typeof newValue === 'function' 
       ? (newValue as (prev: T) => T)(valueRef.current)
@@ -81,7 +56,6 @@ export function useKvState<T>(key: string, initialValue: T) {
     }
   }, [syncToCloud])
 
-  // 仅在挂载时从云端同步一次
   useEffect(() => {
     let cancelled = false
     void (async () => {
@@ -94,8 +68,6 @@ export function useKvState<T>(key: string, initialValue: T) {
           setValue(v)
           valueRef.current = v
         } else {
-          // 如果云端没有数据，也不要在这里写入初始值，避免覆盖其他端的同步
-          // 只有在用户第一次操作修改时，才会触发同步
           lastSentRef.current = JSON.stringify(initialValue)
         }
       } catch (err) {
@@ -110,7 +82,6 @@ export function useKvState<T>(key: string, initialValue: T) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
-  // 监听值变化并同步到云端（带防抖）
   useEffect(() => {
     if (loading) return
     
@@ -128,16 +99,13 @@ export function useKvState<T>(key: string, initialValue: T) {
     }
   }, [key, value, loading, syncToCloud])
 
-  // 页面关闭前的兜底
   useEffect(() => {
     const handleBeforeUnload = () => {
       const serialized = JSON.stringify(valueRef.current)
       if (serialized !== lastSentRef.current) {
-        // 使用 fetch keepalive 确保在页面关闭时也能发送请求
-        const id = ensureClientId()
         void fetch('/api/kv', {
           method: 'PUT',
-          headers: { 'content-type': 'application/json', 'x-client-id': id },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ key, value: valueRef.current }),
           keepalive: true,
         })
