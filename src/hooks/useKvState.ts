@@ -4,26 +4,36 @@ import { loadJson, saveJson, uuid } from '../lib/storage'
 const CLIENT_ID_KEY = 'pomodoro:clientId'
 
 export function getClientId(): string {
-  const existing = localStorage.getItem(CLIENT_ID_KEY)
+  return localStorage.getItem(CLIENT_ID_KEY) || ''
+}
+
+export function setClientId(id: string) {
+  localStorage.setItem(CLIENT_ID_KEY, id.trim())
+}
+
+export function ensureClientId(): string {
+  const existing = getClientId()
   if (existing) return existing
   const id = uuid()
-  localStorage.setItem(CLIENT_ID_KEY, id)
+  setClientId(id)
   return id
 }
 
 async function kvGet(key: string): Promise<{ found: true; value: unknown } | { found: false }> {
+  const id = ensureClientId()
   const res = await fetch(`/api/kv?key=${encodeURIComponent(key)}`, {
     method: 'GET',
-    headers: { 'x-client-id': getClientId() },
+    headers: { 'x-client-id': id },
   })
   if (!res.ok) throw new Error(`kv_get_failed_${res.status}`)
   return (await res.json()) as { found: true; value: unknown } | { found: false }
 }
 
 async function kvPut(key: string, value: unknown): Promise<void> {
+  const id = ensureClientId()
   const res = await fetch('/api/kv', {
     method: 'PUT',
-    headers: { 'content-type': 'application/json', 'x-client-id': getClientId() },
+    headers: { 'content-type': 'application/json', 'x-client-id': id },
     body: JSON.stringify({ key, value }),
   })
   if (!res.ok) throw new Error(`kv_put_failed_${res.status}`)
@@ -41,7 +51,11 @@ export function useKvState<T>(key: string, initialValue: T) {
         const remote = await kvGet(key)
         if (cancelled) return
         hydrationDoneRef.current = true
-        if (!remote.found) return
+        if (!remote.found) {
+          // 如果云端没数据，把本地当前数据同步上去
+          void kvPut(key, value).catch(() => {})
+          return
+        }
         const v = remote.value as T
         lastSentRef.current = JSON.stringify(v)
         saveJson(key, v)

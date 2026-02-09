@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BioKernelPanel } from './components/BioKernelPanel'
 import { normalizeEvents, usePomodoro } from './hooks/usePomodoro'
-import { getClientId, useKvState } from './hooks/useKvState'
+import { getClientId, setClientId, useKvState } from './hooks/useKvState'
 import { useWakeLock } from './hooks/useWakeLock'
 import { clampInt, formatDateTime, formatDurationSec } from './lib/time'
 import { requestMentorReview } from './lib/newapi'
@@ -44,6 +44,7 @@ function App() {
   const [durationM, setDurationM] = useState(() => Math.floor((settings.defaultDurationSec % 3600) / 60))
   const [durationS, setDurationS] = useState(() => settings.defaultDurationSec % 60)
   const [aiKeyDraft, setAiKeyDraft] = useState(() => settings.ai?.apiKey ?? '')
+  const [clientIdDraft, setClientIdDraft] = useState(() => getClientId())
   const [aiReview, setAiReview] = useState<string>('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string>('')
@@ -466,6 +467,26 @@ function App() {
           <input ref={importInputRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={onImportChange} />
         </div>
         {dataError ? <div className="note error">{dataError}</div> : dataOk ? <div className="note">{dataOk}</div> : <div className="note">导入会覆盖本地与云端数据。</div>}
+      </section>
+
+      <section className="panel">
+        <div className="h2">云端同步</div>
+        <div className="row">
+          <label className="label">同步 ID</label>
+          <input className="control" value={clientIdDraft} onChange={(e) => setClientIdDraft(e.target.value)} placeholder="留空会自动生成" />
+          <button
+            className="btn"
+            onClick={() => {
+              if (window.confirm('修改同步 ID 会刷新页面并切换到该 ID 下的数据。确定吗？')) {
+                setClientId(clientIdDraft)
+                window.location.reload()
+              }
+            }}
+          >
+            保存并刷新
+          </button>
+        </div>
+        <div className="note">在不同设备/浏览器输入同一个 ID 即可同步数据。</div>
       </section>
 
       <section className="panel">
