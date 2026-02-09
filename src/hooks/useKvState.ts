@@ -94,7 +94,8 @@ export function useKvState<T>(key: string, initialValue: T) {
           setValue(v)
           valueRef.current = v
         } else {
-          await kvPut(key, initialValue)
+          // 如果云端没有数据，也不要在这里写入初始值，避免覆盖其他端的同步
+          // 只有在用户第一次操作修改时，才会触发同步
           lastSentRef.current = JSON.stringify(initialValue)
         }
       } catch (err) {
