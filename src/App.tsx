@@ -9,7 +9,7 @@ import { clampInt, formatDateTime, formatDurationSec } from './lib/time'
 import { requestMentorReview } from './lib/newapi'
 import { newHardwareCallId, requestHardwareReport } from './lib/hardwareAi'
 import { nowIso, uuid } from './lib/storage'
-import type { AppSettings, DdlEvent, DdlStatus, HardwareCall, PomodoroRecord } from './types'
+import type { AppSettings, DdlEvent, DdlStatus, HardwareCall } from './types'
 import { warmupAlarm } from './lib/alarm'
 
 function App() {
@@ -125,7 +125,42 @@ function App() {
     setEventDraft('')
   }
 
-  const rows: PomodoroRecord[] = records
+  const toDateOnly = (d: Date) => {
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  }
+
+  const [recordsDay, setRecordsDay] = useState(() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return toDateOnly(d)
+  })
+
+  const recordsDayStartMs = useMemo(() => {
+    const d = new Date(`${recordsDay}T00:00:00`)
+    return Number.isNaN(d.getTime()) ? 0 : d.getTime()
+  }, [recordsDay])
+
+  const recordsDayEndMs = useMemo(() => {
+    const d = new Date(recordsDayStartMs)
+    d.setDate(d.getDate() + 1)
+    return d.getTime()
+  }, [recordsDayStartMs])
+
+  const dayRecords = useMemo(() => {
+    return records.filter((r) => {
+      const t = new Date(r.startedAt).getTime()
+      if (Number.isNaN(t)) return false
+      return t >= recordsDayStartMs && t < recordsDayEndMs
+    })
+  }, [records, recordsDayEndMs, recordsDayStartMs])
+
+  const shiftRecordsDay = (deltaDays: number) => {
+    const d = new Date(recordsDayStartMs || Date.now())
+    d.setDate(d.getDate() + deltaDays)
+    d.setHours(0, 0, 0, 0)
+    setRecordsDay(toDateOnly(d))
+  }
 
   const selectedHwCall = useMemo(() => {
     if (!hwCalls.length) return null
@@ -150,7 +185,7 @@ function App() {
     try {
       const content = await requestMentorReview({
         settings: { baseUrl: settings.ai?.baseUrl ?? 'https://x666.me', model: settings.ai?.model ?? 'gemini-3-flash-preview', apiKey: aiKeyDraft },
-        records,
+        records: dayRecords,
         ddlEvents,
       })
       setAiReview(content)
@@ -167,12 +202,12 @@ function App() {
     try {
       const report = await requestHardwareReport({
         settings: { baseUrl: settings.ai?.baseUrl ?? 'https://x666.me', model: settings.ai?.model ?? 'gemini-3-flash-preview', apiKey: aiKeyDraft },
-        records,
+        records: dayRecords,
       })
       const call: HardwareCall = {
         id: newHardwareCallId(),
         timestamp: Date.now(),
-        sourceRecordsCount: records.length,
+        sourceRecordsCount: dayRecords.length,
         report,
       }
       setHwCalls((prev: HardwareCall[]) => [call, ...prev].slice(0, 20), true)
@@ -570,6 +605,15 @@ function App() {
       <section className="panel">
         <div className="tableHeader">
           <div className="h2">记录</div>
+          <div className="row actions" style={{ margin: 0 }}>
+            <button className="btn" onClick={() => shiftRecordsDay(-1)}>
+              ←
+            </button>
+            <input className="control small" type="date" value={recordsDay} onChange={(e) => setRecordsDay(e.target.value)} />
+            <button className="btn" onClick={() => shiftRecordsDay(1)}>
+              →
+            </button>
+          </div>
           <button className="btn" disabled={Boolean(active)} onClick={clearRecords}>
             清空记录
           </button>
@@ -587,14 +631,14 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 ? (
+              {dayRecords.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="empty">
-                    还没有记录。开始一轮番茄钟，让时间对得起你。
+                    当天还没有记录。开始一轮番茄钟，让时间对得起你。
                   </td>
                 </tr>
               ) : (
-                rows.map((r, idx) => (
+                dayRecords.map((r, idx) => (
                   <tr key={r.id} className={r.stoppedAt ? '' : 'running'}>
                     <td>{idx + 1}</td>
                     <td>{r.eventName}</td>
@@ -673,7 +717,7 @@ function App() {
                 </option>
               ))}
             </select>
-            <button className="btn primary" onClick={() => void onHardwareTranslate()} disabled={hwLoading || !aiKeyDraft.trim() || records.length === 0}>
+            <button className="btn primary" onClick={() => void onHardwareTranslate()} disabled={hwLoading || !aiKeyDraft.trim() || dayRecords.length === 0}>
               {hwLoading ? '编译中…' : '翻译成硬件参数'}
             </button>
           </div>
